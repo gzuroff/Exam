@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <item
+        android:id="@+id/addBook"
+        android:title="Add Book" />
+    <item android:id="@+id/updateBook"
+        android:title="Update Book"
+        android:showAsAction="never"
+        />
+    <item
+        android:id="@+id/logOut"
+        android:title="Log Out"
+        />
+</menu>
