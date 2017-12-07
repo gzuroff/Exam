@@ -33,8 +33,8 @@ import static android.content.ContentValues.TAG;
 
 public class updateBook extends Activity implements Button.OnClickListener {
 
-    private EditText editTextTitle, editTextAuthor, editTextCondition, editTextBorrower;
-    private Button buttonUpdate;
+    private EditText editTextTitle, editTextAuthor, editTextCondition, editTextBorrower, editTextSearch;
+    private Button buttonUpdate, buttonDelete, buttonSearch;
     private FirebaseAuth mAuth;
     private ListView mainListView;
     final private ArrayList<String> titles = new ArrayList<>();
@@ -44,6 +44,7 @@ public class updateBook extends Activity implements Button.OnClickListener {
     private ArrayAdapter adapter;
     private String clickedBookTitle;
     private String getClickedBookAuthor;
+    private Boolean search;
 
 
     @Override
@@ -57,59 +58,20 @@ public class updateBook extends Activity implements Button.OnClickListener {
         //editTextAuthor = findViewById(R.id.editTextAuthorUpdate);
         editTextCondition = findViewById(R.id.editTextConditionUpdate);
         editTextBorrower = findViewById(R.id.editTextBorrowerUpdate);
+        editTextSearch = findViewById(R.id.editTextSearch);
 
         mainListView = (ListView) findViewById( R.id.mainListView );
 
         buttonUpdate = findViewById(R.id.buttonUpdate);
+        buttonDelete = findViewById(R.id.buttonDelete);
+        buttonSearch = findViewById(R.id.buttonSearch);
 
         buttonUpdate.setOnClickListener(this);
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        final DatabaseReference myRef = database.getReference();
-        // Read from the database
-        myRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // This method is called once with the initial value and again
-                // whenever data at this location is updated.
+        buttonDelete.setOnClickListener(this);
+        buttonSearch.setOnClickListener(this);
+        search = false;
 
-                for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
-                    Book book = postSnapshot.getValue(Book.class);
-                    titles.add(book.title);
-                    authors.add(book.author);
-                    conditions.add(book.condition);
-                    borrowers.add(book.borrowed);
-                }
-                adapter = new ArrayAdapter(updateBook.this, R.layout.row, R.id.rowTitle, titles){
-                    public View getView(int position, View convertView, ViewGroup parent) {
-                        View view = super.getView(position, convertView, parent);
-                        TextView text1 = (TextView) view.findViewById(R.id.rowAuthor);
-                        TextView text2 = (TextView) view.findViewById(R.id.rowTitle);
-                        TextView text3 = view.findViewById(R.id.rowCondition);
-                        TextView text4 = view.findViewById(R.id.rowBorrower);
-
-                        text1.setText("Author: " + authors.get(position));
-                        text2.setText("Title: " + titles.get(position));
-                        text3.setText("Condition: " + conditions.get(position));
-                        text4.setText("Borrower: " + borrowers.get(position));
-
-                        return view;
-                    }
-                };
-                mainListView.setAdapter(adapter);
-                mainListView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
-                    @Override
-                    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l){
-                        clickedBookTitle = titles.get(i);
-                        getClickedBookAuthor = authors.get(i);
-                }});
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                // Failed to read value
-                Log.w(TAG, "Failed to read value.", error.toException());
-            }
-        });
+        fetchData();
 
     }
 
@@ -136,7 +98,17 @@ public class updateBook extends Activity implements Button.OnClickListener {
                     Log.w(TAG, "Failed to read value.", error.toException());
                 }
             });
-
+            fetchData();
+        }
+        else if(view == buttonDelete){
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            final DatabaseReference myRef = database.getReference();
+            myRef.child(clickedBookTitle + getClickedBookAuthor).removeValue();
+            fetchData();
+        }
+        else if(view == buttonSearch){
+            search = true;
+            fetchData();
         }
     }
 
@@ -164,6 +136,102 @@ public class updateBook extends Activity implements Button.OnClickListener {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void fetchData(){
+        titles.clear();
+        authors.clear();
+        conditions.clear();
+        borrowers.clear();
+        mainListView.setAdapter(null);
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        final DatabaseReference myRef = database.getReference();
+        // Read from the database
+        myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+
+                for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
+                    Book book = postSnapshot.getValue(Book.class);
+                    titles.add(book.title);
+                    authors.add(book.author);
+                    conditions.add(book.condition);
+                    borrowers.add(book.borrowed);
+                }
+                if(!search) {
+                    adapter = new ArrayAdapter(updateBook.this, R.layout.row, R.id.rowTitle, titles) {
+                        public View getView(int position, View convertView, ViewGroup parent) {
+
+                            View view = super.getView(position, convertView, parent);
+                            TextView text1 = (TextView) view.findViewById(R.id.rowAuthor);
+                            TextView text2 = (TextView) view.findViewById(R.id.rowTitle);
+                            TextView text3 = view.findViewById(R.id.rowCondition);
+                            TextView text4 = view.findViewById(R.id.rowBorrower);
+
+                            text1.setText("Author: " + authors.get(position));
+                            text2.setText("Title: " + titles.get(position));
+                            text3.setText("Condition: " + conditions.get(position));
+                            text4.setText("Borrower: " + borrowers.get(position));
+
+                            return view;
+                        }
+                    };
+                }
+                else{
+                    final ArrayList<String> newTitles = new ArrayList<>();
+                    final ArrayList<String> newAuthors = new ArrayList<>();
+                    final ArrayList<String> newConditions = new ArrayList<>();
+                    final ArrayList<String> newBorrowers = new ArrayList<>();
+                    String searchTitle = editTextSearch.getText().toString();
+                    for (int i = 0; i < titles.size(); i++){
+                        if(titles.get(i).equalsIgnoreCase(searchTitle)){
+                            newTitles.add(titles.get(i));
+                            newAuthors.add(authors.get(i));
+                            newConditions.add(conditions.get(i));
+                            newBorrowers.add(borrowers.get(i));
+                        }
+                    }
+                    if(newTitles.size() > 0) {
+                        adapter = new ArrayAdapter(updateBook.this, R.layout.row, R.id.rowTitle, newTitles) {
+                            public View getView(int position, View convertView, ViewGroup parent) {
+
+                                View view = super.getView(position, convertView, parent);
+                                TextView text1 = (TextView) view.findViewById(R.id.rowAuthor);
+                                TextView text2 = (TextView) view.findViewById(R.id.rowTitle);
+                                TextView text3 = view.findViewById(R.id.rowCondition);
+                                TextView text4 = view.findViewById(R.id.rowBorrower);
+
+                                text1.setText("Author: " + newAuthors.get(position));
+                                text2.setText("Title: " + newTitles.get(position));
+                                text3.setText("Condition: " + newConditions.get(position));
+                                text4.setText("Borrower: " + newBorrowers.get(position));
+
+                                return view;
+                            }
+                        };
+                    }
+                    else{
+                        adapter = null;
+                    }
+                }
+                mainListView.setAdapter(adapter);
+                mainListView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+                    @Override
+                    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l){
+                        clickedBookTitle = titles.get(i);
+                        getClickedBookAuthor = authors.get(i);
+                        Toast.makeText(updateBook.this, clickedBookTitle + " selected", Toast.LENGTH_SHORT).show();
+                    }});
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                Log.w(TAG, "Failed to read value.", error.toException());
+            }
+        });
     }
 
 }
