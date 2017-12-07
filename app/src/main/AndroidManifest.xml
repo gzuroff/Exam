@@ -17,7 +17,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".addBook" />
-        <activity android:name=".updateBook"></activity>
+        <activity android:name=".updateBook" />
+        <activity android:name=".FindFriendBook"></activity>
     </application>
 
 </manifest>

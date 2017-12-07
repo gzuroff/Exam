@@ -10,6 +10,9 @@
         android:title="Update Book"
         android:showAsAction="never"
         />
+    <item android:id="@+id/searchFriend"
+        android:title="Search for Friend"
+        />
     <item
         android:id="@+id/logOut"
         android:title="Log Out"

@@ -2,6 +2,7 @@ package com.gregoryzuroff.exam;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -19,6 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -41,6 +43,7 @@ public class updateBook extends Activity implements Button.OnClickListener {
     final private ArrayList<String> authors = new ArrayList<>();
     final private ArrayList<String> conditions = new ArrayList<>();
     final private ArrayList<String> borrowers = new ArrayList<>();
+    final private ArrayList<String> uids = new ArrayList<>();
     private ArrayAdapter adapter;
     private String clickedBookTitle;
     private String getClickedBookAuthor;
@@ -78,8 +81,16 @@ public class updateBook extends Activity implements Button.OnClickListener {
     @Override
     public void onClick(View view){
         if(view == buttonUpdate){
+            String uid = new String();
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                // The user's ID, unique to the Firebase project. Do NOT use this value to
+                // authenticate with your backend server, if you have one. Use
+                // FirebaseUser.getToken() instead.
+                uid = user.getUid();
+            }
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            final DatabaseReference myRef = database.getReference(clickedBookTitle + getClickedBookAuthor);
+            final DatabaseReference myRef = database.getReference(clickedBookTitle + getClickedBookAuthor + uid);
             // Read from the database
             myRef.addValueEventListener(new ValueEventListener() {
                 @Override
@@ -101,9 +112,17 @@ public class updateBook extends Activity implements Button.OnClickListener {
             fetchData();
         }
         else if(view == buttonDelete){
+            String uid = new String();
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+                // The user's ID, unique to the Firebase project. Do NOT use this value to
+                // authenticate with your backend server, if you have one. Use
+                // FirebaseUser.getToken() instead.
+                uid = user.getUid();
+            }
             FirebaseDatabase database = FirebaseDatabase.getInstance();
             final DatabaseReference myRef = database.getReference();
-            myRef.child(clickedBookTitle + getClickedBookAuthor).removeValue();
+            myRef.child(clickedBookTitle + getClickedBookAuthor + uid).removeValue();
             fetchData();
         }
         else if(view == buttonSearch){
@@ -133,6 +152,9 @@ public class updateBook extends Activity implements Button.OnClickListener {
                 FirebaseAuth.getInstance().signOut();
                 startActivity(new Intent(getApplicationContext(), MainActivity.class));
                 return true;
+            case R.id.searchFriend:
+                startActivity(new Intent(getApplicationContext(), FindFriendBook.class));
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -143,6 +165,7 @@ public class updateBook extends Activity implements Button.OnClickListener {
         authors.clear();
         conditions.clear();
         borrowers.clear();
+        uids.clear();
         mainListView.setAdapter(null);
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         final DatabaseReference myRef = database.getReference();
@@ -152,13 +175,23 @@ public class updateBook extends Activity implements Button.OnClickListener {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
-
+                String uid = new String();
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if (user != null) {
+                    // The user's ID, unique to the Firebase project. Do NOT use this value to
+                    // authenticate with your backend server, if you have one. Use
+                    // FirebaseUser.getToken() instead.
+                    uid = user.getUid();
+                }
                 for (DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
                     Book book = postSnapshot.getValue(Book.class);
-                    titles.add(book.title);
-                    authors.add(book.author);
-                    conditions.add(book.condition);
-                    borrowers.add(book.borrowed);
+                    if(book.ownedBy.equalsIgnoreCase(uid)) {
+                        titles.add(book.title);
+                        authors.add(book.author);
+                        conditions.add(book.condition);
+                        borrowers.add(book.borrowed);
+                        uids.add(book.ownedBy);
+                    }
                 }
                 if(!search) {
                     adapter = new ArrayAdapter(updateBook.this, R.layout.row, R.id.rowTitle, titles) {

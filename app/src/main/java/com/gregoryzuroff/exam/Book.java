@@ -2,11 +2,12 @@ package com.gregoryzuroff.exam;
 
 
 public class Book {
-    public Book(String title, String author, String condition, String borrowed) {
+    public Book(String title, String author, String condition, String borrowed, String ownedBy) {
         this.title = title;
         this.author = author;
         this.condition = condition;
         this.borrowed = borrowed;
+        this.ownedBy = ownedBy;
     }
     public Book(){}
     public void setTitle(String title) {
@@ -47,6 +48,12 @@ public class Book {
 
     String condition;
     String borrowed;
+
+    public void setOwnedBy(String ownedBy) {
+        this.ownedBy = ownedBy;
+    }
+
+    String ownedBy;
 
 
 }
