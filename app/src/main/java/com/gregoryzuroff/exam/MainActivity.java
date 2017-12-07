@@ -20,6 +20,17 @@ import static android.content.ContentValues.TAG;
 
 public class MainActivity extends Activity implements Button.OnClickListener{
 
+    /*
+    To make sure that a user can only edit/delete a book that belongs to them, I added a ownedBy
+    value to the Book class which stores the userId of the logged in User when the user adds the book
+    to the database. To allow for multiple people to have the same book, each book is stored under
+    its name, author, and user id. In the Update Book activity, the listview of books only shows
+    books which have the ownedBy value equal to the current user's userId. This way they can only
+    see/edit books that they own.
+
+     */
+
+
     private EditText editTextEmail, editTextPassword;
     private Button buttonLogin, buttonSignUp;
 
